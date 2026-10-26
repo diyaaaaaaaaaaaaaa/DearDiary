@@ -1,4 +1,9 @@
+import rehypeKatex from 'rehype-katex'
+import rehypePrettyCode from 'rehype-pretty-code'
+import remarkMath from 'remark-math'
 import { defineCollection, defineConfig, s } from 'velite'
+import { extractBullets } from './src/lib/markdown-sections'
+import { remarkGithubEmbed } from './src/lib/remark-github-embed'
 
 /**
  * Content schemas — the contract between your markdown and the site.
@@ -12,7 +17,7 @@ const confidence = s.number().int().min(1).max(5)
 
 const journal = defineCollection({
   name: 'JournalEntry',
-  pattern: 'journal/**/*.mdx',
+  pattern: 'journal/*.mdx', // flat: the filename is the URL slug
   schema: s
     .object({
       title: s.string().max(120),
@@ -21,9 +26,15 @@ const journal = defineCollection({
       energy: confidence.optional(),
       tags: s.array(s.string()).default([]),
       path: s.path(),
+      raw: s.raw(),
       body: s.mdx(),
     })
-    .transform((d) => ({ ...d, slug: d.path.replace(/^journal\//, '') })),
+    .transform(({ raw, ...d }) => ({
+      ...d,
+      slug: d.path.replace(/^journal\//, ''),
+      /** Bullets under "## Tomorrow" — feeds the dashboard's Upcoming goals card. */
+      tomorrow: extractBullets(raw, 'Tomorrow'),
+    })),
 })
 
 const dsa = defineCollection({
@@ -155,6 +166,14 @@ export default defineConfig({
     base: '/static/',
     name: '[name]-[hash:6].[ext]',
     clean: true,
+  },
+  mdx: {
+    remarkPlugins: [remarkMath, remarkGithubEmbed],
+    rehypePlugins: [
+      rehypeKatex,
+      // Single dark theme for now; light/dark switching comes with the styling pass.
+      [rehypePrettyCode, { theme: 'github-dark' }],
+    ],
   },
   collections: { journal, dsa, gate, projects, posts, reading, reviews },
 })

@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { CardEmpty, DashboardCard, Metric } from '@/components/dashboard/card'
 import { PageHeader } from '@/components/page-header'
 import { getJournal, getPosts, getProjects, getReading } from '@/lib/content'
@@ -51,7 +52,9 @@ export default function DashboardPage() {
         <DashboardCard title="Latest journal entry">
           {latestEntry ? (
             <>
-              <p className="text-sm font-medium">{latestEntry.title}</p>
+              <Link href={`/journal/${latestEntry.slug}`} className="text-sm font-medium hover:text-accent">
+                {latestEntry.title}
+              </Link>
               <p className="mt-1 text-sm text-muted">{formatDay(latestEntry.date)}</p>
             </>
           ) : (
@@ -106,7 +109,15 @@ export default function DashboardPage() {
         </DashboardCard>
 
         <DashboardCard title="Upcoming goals" className="sm:col-span-2 lg:col-span-3">
-          <CardEmpty>Pulled from the Tomorrow section of your journal, starting in Milestone 2.</CardEmpty>
+          {latestEntry && latestEntry.tomorrow.length ? (
+            <ul className="list-inside list-disc space-y-1 text-sm">
+              {latestEntry.tomorrow.map((goal) => (
+                <li key={goal}>{goal}</li>
+              ))}
+            </ul>
+          ) : (
+            <CardEmpty>Add bullets under “## Tomorrow” in your latest journal entry.</CardEmpty>
+          )}
         </DashboardCard>
       </div>
     </>
